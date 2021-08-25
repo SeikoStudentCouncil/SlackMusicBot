@@ -1,4 +1,8 @@
-const SPOTIFY_API_SEARCH_URL = 'https://api.spotify.com/v1/search'
+const SPOTIFY_API_SEARCH_URL = 'https://api.spotify.com/v1/search';
+const APPLEMUSIC_API_SEARCH_URL = 'https://api.music.apple.com/v1/catalog/jp/search';
+const properties = PropertiesService.getScriptProperties();
+const SPOTIFY_TOKEN = properties.getProperty("SPOTIFY_TOKEN");
+const APPLEMUSIC_TOKEN =  properties.getProperty("APPLEMUSIC_TOKEN");
 
 function doPost(e) {
   if (e.parameters.token != VERIFICATION_TOKEN) {
@@ -35,10 +39,9 @@ function SearchInSpotify(queryTextsCand) {
   }
 
   const SpotifyOpenLink = res[`${type}s`].items[0].externak_urls.spotify;
-  return SpotifyOpenLink; //info
+  return SpotifyOpenLink; // info
 }
 
-const APPLEMUSIC_API_SEARCH_URL = "https://api.music.apple.com/v1/catalog/jp/search"
 function searchInAppleMusic(queryTextsCand) {
   let [typeCand, queryTextsCandShort] = queryTextsCand.split(" ", 2);
   let type, queryTexts;
@@ -53,8 +56,11 @@ function searchInAppleMusic(queryTextsCand) {
     "term": queryTexts.replace(" ", "+"),
     "limit": "1",
     "types": `${type}s`
-  }
+  };
+  res = requestToAppleMusicAPI(APPLEMUSIC_API_SEARCH_URL, params);
 
+  const AppleMusicOpenLink; // link
+  return AppleMusicOpenLink; // info
 }
   
 function logReturn(log) {
@@ -64,7 +70,7 @@ function logReturn(log) {
 
 function requestToSpotifyAPI(url, parameters) {
   const headers = {
-    'Authorization': 'Bearer ' + TOKEN, 
+    'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 
     'Accept': 'application/json', 
     'Content-Type': 'application/json' 
   };
@@ -87,7 +93,18 @@ function requestToSpotifyAPI(url, parameters) {
 }
 
 function requestToAppleMusicAPI(url, parameters) {
-  const 
+  const headers = {
+    'Authorization': 'Bearer ' + APPLEMUSIC_TOKEN, 
+    'Accept': 'application/json', 
+    'Content-Type': 'application/json' 
+  };
+
+  const qpls = {
+    method: 'GET',
+    headers: headers,
+    muteHttpExceptions: true
+  };
+
   while (true) {
     const response = UrlFetchApp.fetch(`${url}?${hashToQuery(parameters)}`, qpls);
     const response_code = response.getResponseCode();
