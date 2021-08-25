@@ -17,10 +17,10 @@ function doPost(e) {
 }
 
 function SearchInSpotify(queryTextsCand) {
-  let [tagCand, queryTextsCandShort] = queryTextsCand.split(" ", 2);
+  let [typeCand, queryTextsCandShort] = queryTextsCand.split(" ", 2);
   let type, queryTexts;
-  if (['track', 'album', 'artist', 'playlist'].includes(typeCand)) {
-    type = tagCand;
+  if (['song', 'album', 'artist', 'playlist'].includes(typeCand)) {
+    type = tagCand.replace('song', 'track');
     queryTexts = queryTextsCandShort;
   } else {
     type = 'track'; // [type] default: track
@@ -36,6 +36,25 @@ function SearchInSpotify(queryTextsCand) {
 
   const SpotifyOpenLink = res[`${type}s`].items[0].externak_urls.spotify;
   return SpotifyOpenLink; //info
+}
+
+const APPLEMUSIC_API_SEARCH_URL = "https://api.music.apple.com/v1/catalog/jp/search"
+function searchInAppleMusic(queryTextsCand) {
+  let [typeCand, queryTextsCandShort] = queryTextsCand.split(" ", 2);
+  let type, queryTexts;
+  if (['song', 'album', 'artist', 'playlist'].includes(typeCand)) {
+    type = tagCand;
+    queryTexts = queryTextsCandShort;
+  } else {
+    type = 'song'; // [type] default: track
+    queryTexts = queryTextsCand;
+  }
+  const params = {
+    "term": queryTexts.replace(" ", "+"),
+    "limit": "1",
+    "types": `${type}s`
+  }
+
 }
   
 function logReturn(log) {
@@ -65,7 +84,19 @@ function requestToSpotifyAPI(url, parameters) {
       Utilities.sleep(10000);
     }
   }
-  
+}
+
+function requestToAppleMusicAPI(url, parameters) {
+  const 
+  while (true) {
+    const response = UrlFetchApp.fetch(`${url}?${hashToQuery(parameters)}`, qpls);
+    const response_code = response.getResponseCode();
+    if (response_code === 200) {
+      return JSON.parse(response.getContentText());
+    } else if (response_code === 429) {
+      Utilities.sleep(10000);
+    }
+  }
 }
 
 function hashToQuery(hashList) {
