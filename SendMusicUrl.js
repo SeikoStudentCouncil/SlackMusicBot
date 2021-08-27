@@ -23,7 +23,7 @@ function doPost(e) {
 
   let params = e.parameter.text;
   const SpotifyInfo = searchInSpotify(params);
-  const AppleMusicInfo;
+  const AppleMusicInfo = '';
   const Info = SpotifyInfo + AppleMusicInfo;
   return logReturn(Info);
 }
@@ -147,7 +147,7 @@ function firstTime() {
   const spotifyClientId = properties.getProperty('SPOTIFY_CLIENT_ID');
   const spotifyClientSecret = properties.getProperty('SPOTIFY_CLIENT_SECRET');
   const spotifyBasicAuthorization = Utilities.base64Encode(`${spotifyClientId}:${spotifyClientSecret}`);
-  const spotifyAuthorizationCode = properties.getProperty('SPOTIFY_AUTHRIZATION_CODE');
+  const spotifyAuthorizationCode = properties.getProperty('SPOTIFY_AUTHORIZATION_CODE');
   setFirstAccessTokenToSpotify(spotifyAuthorizationCode, spotifyBasicAuthorization);
 }
 
