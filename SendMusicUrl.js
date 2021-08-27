@@ -1,12 +1,12 @@
 const SPOTIFY_API_TOKEN_URL = 'https://accounts.spotify.com/api/token';
-
 const SPOTIFY_API_SEARCH_URL = 'https://api.spotify.com/v1/search';
 const APPLEMUSIC_API_SEARCH_URL = 'https://api.music.apple.com/v1/catalog/jp/search';
+const SLACK_API_POST_URL = 'https://slack.com/api/chat.postMessage';
 
 const PROPERTIES = PropertiesService.getScriptProperties();
 const SPOTIFY_BASIC_AUTHORIZATION = PROPERTIES.getProperty('SPOTIFY_BASIC_AUTHORIZATION');
-
-const APPLEMUSIC_TOKEN =  PROPERTIES.getProperty('APPLEMUSIC_TOKEN');
+const APPLEMUSIC_TOKEN = PROPERTIES.getProperty('APPLEMUSIC_TOKEN');
+const SLACK_BOT_TOKEN =  PROPERTIES.getProperty('SLACK_BOT_TOKEN');
 
 var spotifyAccessToken;
 
@@ -21,16 +21,45 @@ function doPost(e) {
   }
 
   let params = e.parameter.text;
-  const SpotifyInfo = searchInSpotify(params);
-  const AppleMusicInfo = '';
-  const Info = SpotifyInfo + AppleMusicInfo;
-  return logReturn(Info);
+  const spotifyInfo = searchInSpotify(params);
+  const appleMusicInfo = searchInAppleMusic(params);
+
+  if (spotifyInfo.error) {
+    return logReturn(spotifyInfo.error);
+  }
+  const description = {
+    song:  `/ ${spotifyInfo.artists} + ${spotifyInfo.album_name || ''}`,
+    album: `/ ${spotifyInfo.artists} (${info.album_type})`,
+    artist:`(${spotifyInfo.genres})`
+  };
+  const info = `
+  ${spotifyInfo.name} ${description[spotifyInfo.type]}
+  :spotify:    ${spotifyInfo.link} 
+  :applemusic: ${appleMusicInfo.link}
+  `.replace(/^\n|\s+$|^ {2}/gm, '');  // 2: indent spaces of formated code
+  postMessageToSlack(e.parameter.channel_id, info);
+  return ContentService.createTextOutput('');
+}
+
+function postMessageToSlack(channelId, message) {
+  const payload = {
+    token : SLACK_BOT_TOKEN,
+    channel : channelId,
+    text : message
+  };
+  
+  const params = {
+    method : "POST",
+    payload : payload
+  };
+  
+  UrlFetchApp.fetch(SLACK_API_POST_URL, params);
 }
 
 function searchInSpotify(queryTextsCand) {
   let [typeCand, queryTextsCandShort] = queryTextsCand.split(' ', 2);
   let type, queryTexts;
-  if (['song', 'album', 'artist', 'playlist'].includes(typeCand)) {
+  if (['song', 'album', 'artist'].includes(typeCand)) {
     type = typeCand.replace('song', 'track');
     queryTexts = queryTextsCandShort;
   } else {
@@ -42,17 +71,39 @@ function searchInSpotify(queryTextsCand) {
 
   if (res.error) {
     e = res.error;
-    return `Err ${e.status}: Spotify API did not return any values (${e.message})`;
+    return { error: `Err ${e.status}: Spotify API did not return any values (${e.message})` };
   }
+  
+  const items = res[`${type}s`].items;
+  if (items.length == 0) {
+    return { error: `Err 000: Spotify API returned no items` };
+  }
+  const item = items[0];
 
-  const SpotifyOpenLink = res[`${type}s`].items[0].external_urls.spotify;
-  return SpotifyOpenLink;  // info
+  let info = {
+    name: item.name,
+    link: item.external_urls.spotify,
+    type: type
+  };
+  switch (type) {
+    case 'song':
+      info.artists = item.artists.map(artist => artist.name).join(', ');
+      if (item.album.album_type != "single") {
+        info.album_name = item.album.name;
+      }
+    case 'album':
+      info.artists = item.artists.map(artist => artist.name).join(', ');
+      info.album_type = item.album.album_type;
+    case 'artist':
+      info.genres = item.genres;
+  }
+  return info;
 }
 
 function searchInAppleMusic(queryTextsCand) {
   let [typeCand, queryTextsCandShort] = queryTextsCand.split(' ', 2);
   let type, queryTexts;
-  if (['song', 'album', 'artist', 'playlist'].includes(typeCand)) {
+  if (['song', 'album', 'artist'].includes(typeCand)) {
     type = typeCand;
     queryTexts = queryTextsCandShort;
   } else {
@@ -60,14 +111,14 @@ function searchInAppleMusic(queryTextsCand) {
     queryTexts = queryTextsCand;
   }
   const params = {
-    'term': queryTexts.replace(' ', '+'),
-    'limit': '1',
-    'types': `${type}s`
+    term: queryTexts.replace(' ', '+'),
+    limit: '1',
+    types: `${type}s`
   };
   res = requestToAppleMusicAPI(APPLEMUSIC_API_SEARCH_URL, params);
 
   const AppleMusicOpenLink = res.results[`${type}s`].data[0].attributes.url;
-  return AppleMusicOpenLink; // info
+  return { link: AppleMusicOpenLink }; // info
 }
   
 function logReturn(log) {
@@ -97,7 +148,7 @@ function requestToSpotifyAPI(url, parameters) {
       case 200:
         return JSON.parse(response.getContentText());
       case 401:
-        spotifyAccessToken = refreshAccessTokenToSpotify()
+        spotifyAccessToken = refreshAccessTokenToSpotify();
       case 429:
         Utilities.sleep(10000);
       default:
@@ -160,8 +211,8 @@ function setFirstAccessTokenToSpotify(authorizationCode, basicAuthorization) {
     'redirect_uri': 'https://example.com/callback'
   };
   const options = {
-    'payload': payload,
-    'headers': headers
+    payload: payload,
+    headers: headers
   };
   const response = JSON.parse(UrlFetchApp.fetch(SPOTIFY_API_TOKEN_URL, options));
 
@@ -186,8 +237,8 @@ function refreshAccessTokenToSpotify() {
     'refresh_token': refreshToken
   };
   const options = {
-    'payload': payload,
-    'headers': headers,
+    payload: payload,
+    headers: headers
   };
   const response = JSON.parse(UrlFetchApp.fetch(SPOTIFY_API_TOKEN_URL, options));
 
