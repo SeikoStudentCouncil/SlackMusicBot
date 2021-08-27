@@ -10,7 +10,6 @@ const APPLEMUSIC_TOKEN =  PROPERTIES.getProperty('APPLEMUSIC_TOKEN');
 
 var spotifyAccessToken;
 
-
 function doPost(e) {
   /*
   if (e.parameters.token != VERIFICATION_TOKEN) {
@@ -162,7 +161,7 @@ function setFirstAccessTokenToSpotify(authorizationCode, basicAuthorization) {
   };
   const options = {
     'payload': payload,
-    'headers': headers,
+    'headers': headers
   };
   const response = JSON.parse(UrlFetchApp.fetch(SPOTIFY_API_TOKEN_URL, options));
 
@@ -194,7 +193,7 @@ function refreshAccessTokenToSpotify() {
 
   scriptProperties.setProperty('spotify_access_token', response.access_token);
 
-  if (parsedResponse.refresh_token) {
+  if (response.refresh_token) {
     scriptProperties.setProperty('spotify_refresh_token', response.refresh_token);
   }
   return parsedResponse.access_token;
