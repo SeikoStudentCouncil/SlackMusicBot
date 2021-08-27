@@ -8,6 +8,7 @@ const APPLEMUSIC_TOKEN =  PROPERTIES.getProperty("APPLEMUSIC_TOKEN");
 
 var spotifyAccessToken;
 
+
 function doPost(e) {
   /*
   if (e.parameters.token != VERIFICATION_TOKEN) {
@@ -27,8 +28,8 @@ function doPost(e) {
 function searchInSpotify(queryTextsCand) {
   let [typeCand, queryTextsCandShort] = queryTextsCand.split(" ", 2);
   let type, queryTexts;
-  if (['track', 'album', 'artist', 'playlist'].includes(typeCand)) {
-    type = tagCand;
+  if (['song', 'album', 'artist', 'playlist'].includes(typeCand)) {
+    type = tagCand.replace('song', 'track');
     queryTexts = queryTextsCandShort;
   } else {
     type = 'track'; // [type] default: track
@@ -128,7 +129,6 @@ function requestToAppleMusicAPI(url, parameters) {
         return response_code;
     }
   }
-  
 }
 
 function hashToQuery(hashList) {
