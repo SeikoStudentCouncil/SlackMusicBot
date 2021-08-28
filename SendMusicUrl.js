@@ -21,10 +21,40 @@ function doPost(e) {
   }
 
   let params = e.parameter.text;
-  const SpotifyInfo = searchInSpotify(params);
-  const AppleMusicInfo = '';
-  const Info = SpotifyInfo + AppleMusicInfo;
-  return logReturn(Info);
+  const spotifyInfo = searchInSpotify(params);
+  const appleMusicInfo = searchInAppleMusic(params);
+
+  if (spotifyInfo.error) {
+    return logReturn(spotifyInfo.error);
+  }
+  const description = {
+    track:  `/ ${spotifyInfo.artists} - ${spotifyInfo.album_name || ''}`,
+    album:  `/ ${spotifyInfo.artists} (${spotifyInfo.album_type})`,
+    artist: `(${spotifyInfo.genres})`
+  };
+  const info = `
+  from: <@${e.parameter.user_id}>
+  ${spotifyInfo.name} ${description[spotifyInfo.type]}
+  :spotify: Spotify: ${spotifyInfo.link} 
+  :applemusic: Apple Music: ${appleMusicInfo.link}
+  `.replace(/^\n|\s+$|^ {2}/gm, '').trim();  // 2: indent spaces of formated code
+  postMessageToSlack(e.parameter.channel_id, info);
+  return ContentService.createTextOutput('');
+}
+
+function postMessageToSlack(channelId, message) {
+  const payload = {
+    token : SLACK_BOT_TOKEN,
+    channel : channelId,
+    text : message
+  };
+  
+  const params = {
+    method : "POST",
+    payload : payload
+  };
+  
+  UrlFetchApp.fetch(SLACK_API_POST_URL, params);
 }
 
 function searchInSpotify(queryTextsCand) {
@@ -45,8 +75,24 @@ function searchInSpotify(queryTextsCand) {
     return `Err ${e.status}: Spotify API did not return any values (${e.message})`;
   }
 
-  const SpotifyOpenLink = res[`${type}s`].items[0].external_urls.spotify;
-  return SpotifyOpenLink;  // info
+  let info = {
+    name: item.name,
+    link: item.external_urls.spotify,
+    type: type
+  };
+  switch (type) {
+    case 'track':
+      info.artists = item.artists.map(artist => artist.name).join(', ');
+      if (item.album.album_type != "single") {
+        info.album_name = item.album.name;
+      }
+    case 'album':
+      info.artists = item.artists.map(artist => artist.name).join(', ');
+      info.album_type = item.album_type;
+    case 'artist':
+      info.genres = item.genres;
+  }
+  return info;
 }
 
 function searchInAppleMusic(queryTextsCand) {
@@ -196,5 +242,5 @@ function refreshAccessTokenToSpotify() {
   if (response.refresh_token) {
     scriptProperties.setProperty('spotify_refresh_token', response.refresh_token);
   }
-  return parsedResponse.access_token;
+  return response.access_token;
 }
