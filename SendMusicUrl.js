@@ -6,7 +6,7 @@ const SLACK_API_POST_URL = 'https://slack.com/api/chat.postMessage';
 const PROPERTIES = PropertiesService.getScriptProperties();
 const SPOTIFY_BASIC_AUTHORIZATION = PROPERTIES.getProperty('SPOTIFY_BASIC_AUTHORIZATION');
 const APPLEMUSIC_TOKEN = PROPERTIES.getProperty('APPLEMUSIC_TOKEN');
-const SLACK_BOT_TOKEN =  PROPERTIES.getProperty('SLACK_BOT_TOKEN');
+const SLACK_BOT_TOKEN = PROPERTIES.getProperty('SLACK_BOT_TOKEN');
 
 var spotifyAccessToken;
 
@@ -35,8 +35,7 @@ function doPost(e) {
   const info = `
   from: <@${e.parameter.user_id}>
   ${spotifyInfo.name} ${description[spotifyInfo.type]}
-  :spotify: Spotify: ${spotifyInfo.link} 
-  :applemusic: Apple Music: ${appleMusicInfo.link}
+  :spotify: <${spotifyInfo.link}|Spotify>   :applemusic: <${appleMusicInfo.link}|Apple Music>
   `.replace(/^\n|\s+$|^ {2}/gm, '').trim();  // 2: indent spaces of formated code
   postMessageToSlack(e.parameter.channel_id, info);
   return ContentService.createTextOutput('');
