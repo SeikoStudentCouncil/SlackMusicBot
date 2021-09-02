@@ -28,9 +28,9 @@ function doPost(e) {
     return logReturn(spotifyInfo.error);
   }
   const description = {
-    track:  `/ ${spotifyInfo.artists} - ${spotifyInfo.album_name || ''}`,
-    album:  `/ ${spotifyInfo.artists} (${spotifyInfo.album_type})`,
-    artist: `(${spotifyInfo.genres})`
+    track:  `/ ${spotifyInfo.artists} ${spotifyInfo.album_name ? `- ${spotifyInfo.album_name}` : ''}`,
+    album:  `/ ${spotifyInfo.artists} ${spotifyInfo.album_type ? `(${spotifyInfo.album_type})` : ''}`,
+    artist: `${spotifyInfo.genres ? `(${spotifyInfo.genres})` : ''}`
   };
   const info = `
   from: <@${e.parameter.user_id}>
