@@ -30,7 +30,7 @@ function doPost(e) {
   const description = {
     track:  `/ ${spotifyInfo.artists} ${spotifyInfo.album_name ? `- ${spotifyInfo.album_name}` : ''}`,
     album:  `/ ${spotifyInfo.artists} ${spotifyInfo.album_type ? `(${spotifyInfo.album_type})` : ''}`,
-    artist: `${spotifyInfo.genres ? `(${spotifyInfo.genres})` : ''}`
+    artist: spotifyInfo.genres ? `(${spotifyInfo.genres})` : ''
   };
   const info = `
   from: <@${e.parameter.user_id}>
@@ -95,7 +95,7 @@ function searchInSpotify(queryTextsCand) {
       info.artists = item.artists.map(artist => artist.name).join(', ');
       info.album_type = item.album_type;
     case 'artist':
-      info.genres = item.genres;
+      info.genres = item.genres.join(', ');
   }
   return info;
 }
